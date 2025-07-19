@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DoubleShot</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="biome-font.css" />
+  <link rel="icon" href="img/favicon.png" type="image/png" />
+  <script src="https://cdn.tailwindcss.com"></script> <!-- change for prod -->
+</head>
+<body class="bg-gray-900 text-white font-sans p-4 mx-auto limitFrame">
+
+  <!-- Title -->
+  <div class="text-center mb-10 mt-8">
+    <img src="img/logo.png" alt="DOUBLE SHOT Logo" class="mx-auto h-8">
+  </div>
+
+  <!-- Player Input -->
+  <div class="mb-8">
+    <label class="block mb-1 text-m text-gray-300 biomeFont">Players</label>
+    <input id="playerInput" type="text" value="" placeholder="Enter player names (comma separated)" class="w-full p-2 bg-gray-800 rounded" />
+  </div>
+
+  <!-- New Match Button -->
+  <div class="text-center mb-6">
+    <button id="newMatchBtn" class="bg-green-500 text-black py-3 px-10 rounded-full biomeFont-bold">
+      NEW MATCH
+    </button>
+  </div>
+
+  <!-- Match Setup -->
+  <div id="matchSetup" class="flex justify-center mb-6 hidden">
+    <div id="matchWrapper" class="bg-gray-800 rounded pt-4 pb-4 w-full">
+      
+      <div id="currentMatch" class="text-center hidden m-2"><h1 id="nowPlaying" class="text-2xl biomeFont">Now Playing !!!</h1></div>
+      <div id="playerSelect" class="text-center hidden m-2"><h1 id="waiting" class="text-xl biomeFont">Player Selection </h1></div>
+
+      <!-- Timer Display -->
+      <div id="timerDisplay" class="text-center text-lg text-slate-400 mb-4 biomeFont hidden">00:00</div>
+
+      <div class="flex justify-center gap-3 m-4">
+        <!-- Team A -->
+        <div id="teamAwrapper" class="text-center bg-gray-800 p-4 rounded border border-gray-500">
+          <div>
+            <select id="teamA1" class="bg-gray-700 text-white text-center p-2 rounded screenToWidth mb-2 biomeFont"></select>
+            <div id="andTeal" class="text-center text-lg">&</div>
+              <select id="teamA2" class="bg-gray-700 text-white text-center p-2 rounded screenToWidth mt-2 biomeFont"></select>
+          </div>
+          <input type="number" id="scoreA" class="text-center text-xl text-teal-300 biomeFont w-1/2 px-1 py-3 mt-4 bg-gray-900 rounded hidden" />
+        </div>
+        <!-- Team B -->
+        <div id="teamBwrapper" class="text-center bg-gray-800 p-4 rounded border border-gray-500">
+          <div>
+            <select id="teamB1" class="bg-gray-700 text-white text-center p-2 rounded screenToWidth mb-2 biomeFont"></select>
+            <div id="andPurple" class="text-center text-lg">&</div>
+              <select id="teamB2" class="bg-gray-700 text-white text-center p-2 rounded screenToWidth mt-2 biomeFont"></select>
+          </div>
+          <input type="number" id="scoreB" class="text-center text-xl text-purple-300 biomeFont w-1/2 px-1 py-3 mt-4 bg-gray-900 rounded hidden" />
+        </div>
+      </div>
+
+      <div class="text-center mt-4 mb-2">
+        <button id="confirmMatchBtn" class="border border-pink-500 text-pink-500 py-2 px-10 rounded-full biomeFont">
+          Confirm ?
+        </button>
+      </div>
+
+      <div id="scoreInputs" class="text-center mt-4 mb-2 hidden">
+        <button id="submitScoreBtn" class="bg-pink-500 text-black py-2 px-6 rounded-full biomeFont-bold">
+          End Match
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Scoreboard -->
+  <div class="mt-8 mb-8">
+    <h2 class="text-green-400 text-xl mb-2 biomeFont">Scoreboard</h2>
+    <table class="w-full text-center table-fixed border-collapse border border-gray-700">
+      <thead class="bg-gray-800">
+        <tr>
+          <th class="border border-gray-700 py-2 biomeFont">Player</th>
+          <th class="border border-gray-700 py-2 biomeFont">Win</th>
+          <th class="border border-gray-700 py-2 biomeFont">Loss</th>
+          <th class="border border-gray-700 py-2 biomeFont">%</th>
+        </tr>
+      </thead>
+      <tbody id="scoreTable"></tbody>
+    </table>
+  </div>
+
+  <!-- Match History -->
+  <div class="mb-10">
+    <h2 class="text-pink-400 text-xl biomeFont">Match History</h2>
+    <p id="dateTime" class="text-gray-400 text-xs biomeFont mb-2"></p>
+    <table class="w-full text-center table-fixed border-collapse border border-gray-700">
+      <thead class="bg-gray-800">
+        <tr>
+          <th class="border border-gray-700 py-2 biomeFont">⧗</th>
+          <th class="border border-gray-700 py-2 biomeFont">Team A</th>
+          <th class="border border-gray-700 py-2 biomeFont">Team B</th>
+          <th class="border border-gray-700 py-2 biomeFont">Score</th>
+        </tr>
+      </thead>
+      <tbody id="historyTable"></tbody>
+    </table>
+  </div>
+
+  <!-- Highlights -->
+  <div id="moreStats" class="w-full mb-20">
+    <h2 class="text-sky-400 text-xl mb-4 biomeFont">Highlights for the day</h2>
+
+    <!-- MVP -->
+    <div id="mvpWrapper" class="highlights mb-6 rounded-box">
+      <div class="flex w-full biomeFont">
+        <div>
+          <img src="img/badminton1.png" alt="Top Player" class="h-[110px] w-auto"/>
+        </div>
+        <div class="flex-1 px-4">
+          <div class="my-2">Top Player 🏆</div>
+          <div id="mvpName" class="text-xl mt-2 mb-1 text-yellow-400"></div>
+          <div id="mvpStats" class="hidden text-[10px]"><span id="mvpWinStats" class="text-[13px]"></span> — <span id="mvpWRStats"></span>% winrate</div>
+          <div class="notEnough text-xs text-gray-500">Play more to unlock</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deadly Duo -->
+    <div id="mvpWrapper" class="highlights mb-6 rounded-box">
+      <div class="flex justify-end w-full biomeFont">
+        <div class="flex-1 w-auto px-4 text-right">
+          <div class="my-2">🔥 Deadly Duo</div>
+          <div id="deadlyDuo" class="text-xl mt-2 mb-1 text-orange-400"></div>
+          <div id="winMargin" class="hidden text-[10px] text-white-200">Match #<span id="matchMargin"></span> — Won by <span id="pointMargin" class="text-[13px]"></span></div>
+          <div class="notEnough text-xs text-gray-500">Play more to unlock</div>
+        </div>
+        <div>
+          <img src="img/badminton4.png" alt="Top Player" class="h-[110px] w-auto"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quickest Match -->
+    <div id="mvpWrapper" class="highlights mb-6 rounded-box">
+      <div class="flex justify-end w-full biomeFont">
+        <div>
+          <img src="img/badminton3.png" alt="Top Player" class="h-[110px] w-auto"/>
+        </div>
+        <div class="flex-1 w-auto px-4">
+          <div class="my-2">Quickest Match ⚡</div>
+          <div id="quickestTime" class="text-xl mb-1"></div>
+          <div class="text-[10px]">
+            <div id="quickest1" class="text-teal-300"></div>
+            <div id="quickest2" class="text-purple-300"></div>
+          </div>
+          <div class="notEnough text-xs text-gray-500">Play more to unlock</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Longest Match -->
+    <div id="mvpWrapper" class="highlights mb-6 rounded-box">
+      <div class="flex justify-end w-full biomeFont">
+        <div class="flex-1 w-auto px-4 text-right">
+          <div class="my-2">⏳ Longest Match</div>
+          <div id="longestTime" class="text-xl mb-1"></div>
+          <div class="text-[10px]">
+            <div id="longest1" class="text-teal-300"></div>
+            <div id="longest2" class="text-purple-300"></div>
+          </div>
+          <div class="notEnough text-xs text-gray-500">Play more to unlock</div>
+        </div>
+        <div>
+          <img src="img/badminton2.png" alt="Top Player" class="h-[110px] w-auto"/>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RESET Button -->
+  <div class="text-center mb-10">
+    <button onclick="resetSession()" class="border border-red-500 text-red-500 py-3 px-6 rounded-full biomeFont">Reset All Data</button>
+  </div>
+
+  <!-- Custom Alert Popup -->
+  <div id="customAlert" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-gray-800 text-white p-6 rounded-xl shadow-lg max-w-sm w-full text-center">
+      <h2 id="alertMessage" class="text-lg biomeFont mb-4">Alert message goes here</h2>
+      <button onclick="hideCustomAlert()" class="mt-2 bg-cyan-500 text-black py-2 px-6 rounded-full biomeFont-bold">
+        OK
+      </button>
+    </div>
+  </div>
+
+  <!-- Custom Confirm Popup -->
+  <div id="customConfirm" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-gray-800 text-white p-6 rounded-xl shadow-lg max-w-sm w-full text-center">
+      <h2 id="confirmMessage" class="text-lg biomeFont mb-8">Are you sure?</h2>
+      <div class="flex justify-center space-x-4 mt-4">
+        <button id="confirmAgreeBtn" class="bg-red-500 text-black py-2 px-6 rounded-full biomeFont-bold">RESET</button>
+        <button id="confirmCancelBtn" class="border border-red-500 text-red-500 py-2 px-6 rounded-full biomeFont-bold">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- <div class="h-8"></div> -->
+
+  <footer class="border-t border-gray-700 bg-gray-900 text-gray-500 text-center py-4 text-xs biomeFont">
+    &copy; 2025 DOUBLE SHOT. All rights reserved.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
