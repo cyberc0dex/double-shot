@@ -102,10 +102,11 @@ function updateScoreboard() {
     const wr = total ? ((s.win / total) * 100).toFixed(1) : '0.0';
     tbody.innerHTML += `
       <tr>
-        <td class="border border-gray-700 py-1">${p}</td>
-        <td class="border border-gray-700 py-1">${s.win}</td>
-        <td class="border border-gray-700 py-1">${s.loss}</td>
-        <td class="border border-gray-700 py-1">${wr} %</td>
+        <td class="border border-gray-700 py-2">${p}</td>
+        <td class="border border-gray-700 py-2">${s.win}</td>
+        <td class="border border-gray-700 py-2">${s.loss}</td>
+        <td class="border border-gray-700 py-2">${total}</td>
+        <td class="border border-gray-700 py-2">${wr} %</td>
       </tr>
     `;
   });
@@ -120,8 +121,8 @@ function updateHistory() {
     tbody.innerHTML += `
       <tr>
         <td class="border border-gray-700 py-1">${m.duration}</td>
-        <td class="border border-gray-700 py-1">${m.teamA.join(' & ')}</td>
-        <td class="border border-gray-700 py-1">${m.teamB.join(' & ')}</td>
+        <td class="border border-gray-700 py-1">${m.teamA.join(' &<br> ')}</td>
+        <td class="border border-gray-700 py-1">${m.teamB.join(' &<br> ')}</td>
         <td class="border border-gray-700 py-1">${m.scoreA}-${m.scoreB}</td>
       </tr>
     `;
@@ -470,6 +471,40 @@ function showCustomAlert(message) {
 
 function hideCustomAlert() {
   document.getElementById('customAlert').classList.add('hidden');
+}
+
+
+
+function getSessionData() {
+  const tableToCSV = (tableId) => {
+    const table = document.getElementById(tableId);
+    let csv = '';
+    if (!table) return '';
+
+    const rows = table.querySelectorAll('tr');
+    rows.forEach(row => {
+      const cols = row.querySelectorAll('th, td');
+      const rowData = Array.from(cols).map(col => `"${col.textContent.trim()}"`);
+      csv += rowData.join(',') + '\n';
+    });
+    return csv.trim(); // remove last newline
+  };
+
+  const scoreCSV = tableToCSV('scoreTable');
+  const historyCSV = tableToCSV('historyTable');
+
+  const combinedCSV = '=== SCOREBOARD ===\n' + scoreCSV + '\n\n' + '=== MATCH HISTORY ===\n' + historyCSV;
+
+  // console.log(combinedCSV);
+
+  // Copy to clipboard
+  navigator.clipboard.writeText(combinedCSV).then(() => {
+    showCustomAlert("Session data copied to clipboard");
+  }).catch(err => {
+    showCustomAlert("Failed to copy data");
+    console.error("Clipboard error:", err);
+  });
+
 }
 
 

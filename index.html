@@ -77,14 +77,16 @@
 
   <!-- Scoreboard -->
   <div class="mt-8 mb-8">
-    <h2 class="text-green-400 text-xl mb-2 biomeFont">Scoreboard</h2>
+    <h2 class="text-green-400 text-xl biomeFont">Scoreboard</h2>
+    <p id="dateTime" class="text-gray-400 text-xs biomeFont mb-2"></p>
     <table class="w-full text-center table-fixed border-collapse border border-gray-700">
       <thead class="bg-gray-800">
         <tr>
-          <th class="border border-gray-700 py-2 biomeFont">Player</th>
-          <th class="border border-gray-700 py-2 biomeFont">Win</th>
-          <th class="border border-gray-700 py-2 biomeFont">Loss</th>
-          <th class="border border-gray-700 py-2 biomeFont">%</th>
+          <th class="border border-gray-700 py-2 biomeFont w-auto">Player</th>
+          <th class="border border-gray-700 py-2 biomeFont w-[18%]">Win</th>
+          <th class="border border-gray-700 py-2 biomeFont w-[18%]">Loss</th>
+          <th class="border border-gray-700 py-2 biomeFont w-[18%]">Total</th>
+          <th class="border border-gray-700 py-2 biomeFont w-[18%]">%</th>
         </tr>
       </thead>
       <tbody id="scoreTable"></tbody>
@@ -93,15 +95,15 @@
 
   <!-- Match History -->
   <div class="mb-10">
-    <h2 class="text-pink-400 text-xl biomeFont">Match History</h2>
-    <p id="dateTime" class="text-gray-400 text-xs biomeFont mb-2"></p>
+    <h2 class="text-pink-400 text-xl mb-2 biomeFont">Match History</h2>
+    
     <table class="w-full text-center table-fixed border-collapse border border-gray-700">
       <thead class="bg-gray-800">
         <tr>
-          <th class="border border-gray-700 py-2 biomeFont">⧗</th>
+          <th class="border border-gray-700 py-2 biomeFont w-[20%]">⧗</th>
           <th class="border border-gray-700 py-2 biomeFont">Team A</th>
           <th class="border border-gray-700 py-2 biomeFont">Team B</th>
-          <th class="border border-gray-700 py-2 biomeFont">Score</th>
+          <th class="border border-gray-700 py-2 biomeFont w-[22%]">Score</th>
         </tr>
       </thead>
       <tbody id="historyTable"></tbody>
@@ -180,9 +182,19 @@
 
   </div>
 
-  <!-- RESET Button -->
-  <div class="text-center mb-10">
-    <button onclick="resetSession()" class="border border-red-500 text-red-500 py-3 px-6 rounded-full biomeFont">Reset All Data</button>
+  
+  <div class="flex w-full mb-10 text-center gap-4">
+
+    <!-- EXTRACT DATA button -->
+    <div class="w-1/2 pl-4">
+      <button onclick="getSessionData()" class="w-full border border-purple-500 text-purple-500 py-3 rounded-full biomeFont">Extract Data</button>
+    </div>
+
+    <!-- RESET Button -->
+    <div class="w-1/2 pr-4">
+      <button onclick="resetSession()" class="w-full border border-red-500 text-red-500 py-3 rounded-full biomeFont">Reset Data</button>
+    </div>
+
   </div>
 
   <!-- Custom Alert Popup -->
@@ -195,7 +207,7 @@
     </div>
   </div>
 
-  <!-- Custom Confirm Popup -->
+  <!-- RESET Confirm Popup -->
   <div id="customConfirm" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
     <div class="bg-gray-800 text-white p-6 rounded-xl shadow-lg max-w-sm w-full text-center">
       <h2 id="confirmMessage" class="text-lg biomeFont mb-8">Are you sure?</h2>
