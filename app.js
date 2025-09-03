@@ -18,6 +18,7 @@ if (sessionStorage.getItem("stats")) {
 }
 if (sessionStorage.getItem("history")) {
   history.push(...JSON.parse(sessionStorage.getItem("history")));
+  recalcStats();
   updateScoreboard();
   updateHistory();
   revealHighlights();
@@ -50,6 +51,7 @@ function parsePlayers() {
     sessionStorage.setItem("players", JSON.stringify(players));
     sessionStorage.setItem("stats", JSON.stringify(stats));
 }
+
 
 
 // fill dropdown with player names
@@ -137,6 +139,8 @@ function updateHistory() {
   });
 }
 
+
+
 function toggleDropdown(index) {
   // Close other dropdowns
   document.querySelectorAll('[id^="dropdown-"]').forEach(dd => {
@@ -147,6 +151,8 @@ function toggleDropdown(index) {
   dropdown.classList.toggle("hidden");
 }
 
+
+
 // Close dropdowns when clicking outside
 document.addEventListener("click", (e) => {
   const clickedMenu = e.target.closest('[id^="dropdown-"]');
@@ -155,7 +161,6 @@ document.addEventListener("click", (e) => {
     document.querySelectorAll('[id^="dropdown-"]').forEach(dd => dd.classList.add("hidden"));
   }
 });
-
 
 
 
@@ -174,7 +179,6 @@ function enterEditMode(index) {
     </td>
   `;
 }
-
 
 
 
@@ -208,6 +212,7 @@ function saveEdit(index) {
 }
 
 
+
 function deleteRow(index) {
   const match = history[index];
   const teams = `${match.teamA.join(" & ")} <br>VS<br> ${match.teamB.join(" & ")}`;
@@ -237,13 +242,13 @@ function deleteRow(index) {
 
       sessionStorage.setItem("history", JSON.stringify(history));
       sessionStorage.setItem("stats", JSON.stringify(stats));
+      recalcStats()
       updateScoreboard();
       updateHistory();
       revealHighlights();
     }
   });
 }
-
 
 
 
@@ -280,9 +285,6 @@ function recalcStats() {
     });
   });
 }
-
-
-
 
 
 
@@ -409,13 +411,11 @@ function startTimer() {
 
 
 
-
 function stopTimer() {
   clearInterval(timerInterval);
   const elapsed = Math.floor((Date.now() - startTimestamp) / 1000);
   seconds = elapsed;
 }
-
 
 
 
@@ -464,6 +464,8 @@ submitScoreBtn.onclick = () => {
       }
 }
 
+
+
 // Triggers when match history >= 4
 function revealHighlights() {
   if (history.length > 3) {
@@ -490,6 +492,8 @@ function revealHighlights() {
     document.getElementById('matchMargin').textContent = getBiggestPointLead()[2];
   }
 }
+
+
 
 function resetStyle() {
   // reset values
