@@ -117,17 +117,172 @@ function updateScoreboard() {
 function updateHistory() {
   const tbody = document.getElementById('historyTable');
   tbody.innerHTML = '';
-  history.forEach((m) => {
+
+  history.forEach((m, idx) => {
     tbody.innerHTML += `
-      <tr>
-        <td class="border border-gray-700 py-1">${m.duration}</td>
-        <td class="border border-gray-700 py-1">${m.teamA.join(' &<br> ')}</td>
-        <td class="border border-gray-700 py-1">${m.teamB.join(' &<br> ')}</td>
-        <td class="border border-gray-700 py-1">${m.scoreA}-${m.scoreB}</td>
+      <tr data-index="${idx}">
+        <td class="border border-gray-700 py-1 text-center">${m.duration}</td>
+        <td class="border border-gray-700 py-1 text-center">${m.teamA.join(' & ')}</td>
+        <td class="border border-gray-700 py-1 text-center">${m.teamB.join(' & ')}</td>
+        <td class="border border-gray-700 py-1 text-center">${m.scoreA} - ${m.scoreB}</td>
+        <td class="border border-gray-700 py-1 text-center relative">
+          <button onclick="toggleDropdown(${idx})" class="px-2">⋮</button>
+          <div id="dropdown-${idx}" class="hidden absolute right-0 mt-1 w-24 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
+            <button onclick="enterEditMode(${idx})" class="block w-full text-left px-2 py-1 hover:bg-gray-700">Edit</button>
+            <button onclick="deleteRow(${idx})" class="block w-full text-left px-2 py-1 hover:bg-gray-700 text-red-400">Delete</button>
+          </div>
+        </td>
       </tr>
     `;
   });
 }
+
+function toggleDropdown(index) {
+  // Close other dropdowns
+  document.querySelectorAll('[id^="dropdown-"]').forEach(dd => {
+    if (dd.id !== `dropdown-${index}`) dd.classList.add("hidden");
+  });
+
+  const dropdown = document.getElementById(`dropdown-${index}`);
+  dropdown.classList.toggle("hidden");
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener("click", (e) => {
+  const clickedMenu = e.target.closest('[id^="dropdown-"]');
+  const clickedToggle = e.target.closest('button') && /toggleDropdown\(/.test(e.target.getAttribute('onclick') || '');
+  if (!clickedMenu && !clickedToggle) {
+    document.querySelectorAll('[id^="dropdown-"]').forEach(dd => dd.classList.add("hidden"));
+  }
+});
+
+
+
+
+function enterEditMode(index) {
+  const row = document.querySelector(`#historyTable tr[data-index="${index}"]`);
+  const match = history[index];
+
+  row.innerHTML = `
+    <td class="border border-gray-700 py-1"><input type="text" class="w-full bg-transparent text-center inputEdit" value="${match.duration}"></td>
+    <td class="border border-gray-700 py-1"><input type="text" class="w-full bg-transparent text-center inputEdit" value="${match.teamA.join(' & ')}"></td>
+    <td class="border border-gray-700 py-1"><input type="text" class="w-full bg-transparent text-center inputEdit" value="${match.teamB.join(' & ')}"></td>
+    <td class="border border-gray-700 py-1"><input type="text" class="w-full bg-transparent text-center inputEdit" value="${match.scoreA}-${match.scoreB}"></td>
+    <td class="border border-gray-700 py-1 text-center">
+      <button onclick="saveEdit(${index})" class="text-s" title="Save" style="margin-bottom:3px;">💾</button>
+      <button onclick="updateHistory()" class="text-s" title="Cancel">❌</button>
+    </td>
+  `;
+}
+
+
+
+
+function saveEdit(index) {
+  const row = document.querySelector(`#historyTable tr[data-index="${index}"]`);
+  const inputs = row.querySelectorAll("input");
+
+  const duration = inputs[0].value.trim();
+  const teamA = inputs[1].value.split('&').map(p => p.trim()).filter(Boolean);
+  const teamB = inputs[2].value.split('&').map(p => p.trim()).filter(Boolean);
+  const scoreParts = inputs[3].value.split('-').map(t => t.trim());
+  const scoreA = parseInt(scoreParts[0], 10);
+  const scoreB = parseInt(scoreParts[1], 10);
+
+  if (teamA.length !== 2 || teamB.length !== 2 || Number.isNaN(scoreA) || Number.isNaN(scoreB) || !/^\d{1,2}:\d{2}$/.test(duration)) {
+    showCustomAlert("Please use valid values:\n• Duration mm:ss\n• Team A: A1 & A2\n• Team B: B1 & B2\n• Score: 21-18");
+    return;
+  }
+
+  const winner = scoreA > scoreB ? 'TeamA' : 'TeamB';
+  history[index] = { teamA, teamB, duration, scoreA, scoreB, winner };
+
+  recalcStats();                                    // rebuild stats from edited history
+  sessionStorage.setItem("history", JSON.stringify(history));
+  sessionStorage.setItem("stats", JSON.stringify(stats));
+  sessionStorage.setItem("players", JSON.stringify(players));
+
+  updateScoreboard();
+  updateHistory();
+  revealHighlights();
+}
+
+
+function deleteRow(index) {
+  const match = history[index];
+  const teams = `${match.teamA.join(" & ")} <br>VS<br> ${match.teamB.join(" & ")}`;
+
+  showCustomConfirm(`Are you sure you want to delete this match?<br><small>${teams}</small>`, 
+    function(userAgreed) {
+    if (userAgreed) {
+      history.splice(index, 1);
+
+      // Recalc stats from scratch
+      Object.keys(stats).forEach(p => {
+        stats[p].win = 0;
+        stats[p].loss = 0;
+        stats[p].points = 0;
+      });
+
+      history.forEach(m => {
+        m.teamA.forEach(p => {
+          stats[p][m.winner === 'TeamA' ? 'win' : 'loss']++;
+          stats[p].points += m.scoreA;
+        });
+        m.teamB.forEach(p => {
+          stats[p][m.winner === 'TeamB' ? 'win' : 'loss']++;
+          stats[p].points += m.scoreB;
+        });
+      });
+
+      sessionStorage.setItem("history", JSON.stringify(history));
+      sessionStorage.setItem("stats", JSON.stringify(stats));
+      updateScoreboard();
+      updateHistory();
+      revealHighlights();
+    }
+  });
+}
+
+
+
+
+function recalcStats() {
+  // Collect all players mentioned anywhere (existing + history)
+  const all = new Set(players);
+  history.forEach(m => {
+    [...m.teamA, ...m.teamB].forEach(p => all.add(p));
+  });
+
+  // Ensure stats entries exist for everyone in 'all'
+  all.forEach(p => {
+    if (!stats[p]) stats[p] = { win: 0, loss: 0, points: 0 };
+    else { stats[p].win = 0; stats[p].loss = 0; stats[p].points = 0; }
+  });
+
+  // Prune stats for players no longer present
+  Object.keys(stats).forEach(p => { if (!all.has(p)) delete stats[p]; });
+
+  // Update the players list to match (sorted for neatness)
+  const updatedPlayers = Array.from(all).sort((a,b) => a.localeCompare(b));
+  players.length = 0;
+  players.push(...updatedPlayers);
+
+  // Rebuild stats from history
+  history.forEach(m => {
+    m.teamA.forEach(p => {
+      stats[p][m.winner === 'TeamA' ? 'win' : 'loss']++;
+      stats[p].points += m.scoreA;
+    });
+    m.teamB.forEach(p => {
+      stats[p][m.winner === 'TeamB' ? 'win' : 'loss']++;
+      stats[p].points += m.scoreB;
+    });
+  });
+}
+
+
+
 
 
 
