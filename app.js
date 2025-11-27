@@ -643,21 +643,16 @@ function getSessionData() {
     const rows = table.querySelectorAll('tr');
     rows.forEach(row => {
       const cols = row.querySelectorAll('th, td');
-      const rowData = Array.from(cols).map(col => `"${col.textContent.trim()}"`);
-      csv += rowData.join(',') + '\n';
+      const rowData = Array.from(cols).slice(0, -1).map(col => `${col.textContent.trim()}`);
+      csv += rowData.join('|') + '\n';
     });
-    return csv.trim(); // remove last newline
+    return csv.trim();
   };
 
-  const scoreCSV = tableToCSV('scoreTable');
   const historyCSV = tableToCSV('historyTable');
 
-  const combinedCSV = '=== SCOREBOARD ===\n' + scoreCSV + '\n\n' + '=== MATCH HISTORY ===\n' + historyCSV;
-
-  // console.log(combinedCSV);
-
   // Copy to clipboard
-  navigator.clipboard.writeText(combinedCSV).then(() => {
+  navigator.clipboard.writeText(historyCSV).then(() => {
     showCustomAlert("Session data copied to clipboard");
   }).catch(err => {
     showCustomAlert("Failed to copy data");
