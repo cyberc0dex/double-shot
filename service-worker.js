@@ -1,4 +1,4 @@
-const CACHE_NAME = 'doubleshot-v2';
+const CACHE_NAME = 'doubleshot-v2.0.1';
 const urlsToCache = [
   './',
   './index.html',
