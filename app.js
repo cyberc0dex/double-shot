@@ -9,21 +9,21 @@ let startTimestamp = null;
 document.getElementById('dateTime').textContent = getDateTime();
 
 // Restore session data if available
-if (sessionStorage.getItem("players")) {
-  players = JSON.parse(sessionStorage.getItem("players"));
+if (localStorage.getItem("players")) {
+  players = JSON.parse(localStorage.getItem("players"));
   fillAll(); // repopulate dropdowns
 }
-if (sessionStorage.getItem("stats")) {
-  Object.assign(stats, JSON.parse(sessionStorage.getItem("stats")));
+if (localStorage.getItem("stats")) {
+  Object.assign(stats, JSON.parse(localStorage.getItem("stats")));
 }
-if (sessionStorage.getItem("history")) {
-  history.push(...JSON.parse(sessionStorage.getItem("history")));
+if (localStorage.getItem("history")) {
+  history.push(...JSON.parse(localStorage.getItem("history")));
   recalcStats();
   updateScoreboard();
   updateHistory();
   revealHighlights();
 }
-const savedInput = sessionStorage.getItem("playerInput");
+const savedInput = localStorage.getItem("playerInput");
 if (savedInput) {
   document.getElementById('playerInput').value = savedInput;
 }
@@ -33,7 +33,7 @@ if (savedInput) {
 function resetSession() {
   showCustomConfirm("Do you really want to reset all data?", function(userAgreed) {
     if (userAgreed) {
-      sessionStorage.clear();
+      localStorage.clear();
       location.reload();
     }
   });
@@ -47,9 +47,9 @@ function parsePlayers() {
     players.forEach(p => { 
       if (!stats[p]) stats[p] = { win: 0, loss: 0, points: 0 };
     });
-    sessionStorage.setItem("playerInput", raw); // Save input text
-    sessionStorage.setItem("players", JSON.stringify(players));
-    sessionStorage.setItem("stats", JSON.stringify(stats));
+    localStorage.setItem("playerInput", raw); // Save input text
+    localStorage.setItem("players", JSON.stringify(players));
+    localStorage.setItem("stats", JSON.stringify(stats));
 }
 
 
@@ -71,7 +71,7 @@ function randomizeTeams() {
     let pool = [...players];
     const pick = () => pool.splice(Math.floor(Math.random() * pool.length), 1)[0]; // after every pick(), the array gets spliced
     const [a1, a2, b1, b2] = [pick(), pick(), pick(), pick()];
-    console.log(pool);
+    // console.log(pool);
     // then, set the dropdown values
     teamA1.value = a1; teamA2.value = a2;
     teamB1.value = b1; teamB2.value = b2;
@@ -201,10 +201,10 @@ function saveEdit(index) {
   const winner = scoreA > scoreB ? 'TeamA' : 'TeamB';
   history[index] = { teamA, teamB, duration, scoreA, scoreB, winner };
 
-  recalcStats();                                    // rebuild stats from edited history
-  sessionStorage.setItem("history", JSON.stringify(history));
-  sessionStorage.setItem("stats", JSON.stringify(stats));
-  sessionStorage.setItem("players", JSON.stringify(players));
+  recalcStats(); // rebuild stats from edited history
+  localStorage.setItem("history", JSON.stringify(history));
+  localStorage.setItem("stats", JSON.stringify(stats));
+  localStorage.setItem("players", JSON.stringify(players));
 
   updateScoreboard();
   updateHistory();
@@ -240,8 +240,8 @@ function deleteRow(index) {
         });
       });
 
-      sessionStorage.setItem("history", JSON.stringify(history));
-      sessionStorage.setItem("stats", JSON.stringify(stats));
+      localStorage.setItem("history", JSON.stringify(history));
+      localStorage.setItem("stats", JSON.stringify(stats));
       recalcStats()
       updateScoreboard();
       updateHistory();
@@ -455,8 +455,8 @@ submitScoreBtn.onclick = () => {
         });    
 
         history.push({ teamA, teamB, winner, duration, scoreA, scoreB });
-        sessionStorage.setItem("stats", JSON.stringify(stats));
-        sessionStorage.setItem("history", JSON.stringify(history));
+        localStorage.setItem("stats", JSON.stringify(stats));
+        localStorage.setItem("history", JSON.stringify(history));
         updateScoreboard(); 
         updateHistory();
         resetTimer();
