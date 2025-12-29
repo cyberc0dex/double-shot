@@ -6,7 +6,56 @@ let seconds = 0;
 let hopTimeout = null;
 let dotsInterval = null;
 let startTimestamp = null;
-document.getElementById('dateTime').textContent = getDateTime();
+
+// Cache DOM elements to avoid repeated queries
+const elements = {
+  playerInput: document.getElementById('playerInput'),
+  dateTime: document.getElementById('dateTime'),
+  newMatchBtn: document.getElementById('newMatchBtn'),
+  confirmMatchBtn: document.getElementById('confirmMatchBtn'),
+  submitScoreBtn: document.getElementById('submitScoreBtn'),
+  matchSetup: document.getElementById('matchSetup'),
+  currentMatch: document.getElementById('currentMatch'),
+  playerSelect: document.getElementById('playerSelect'),
+  timerDisplay: document.getElementById('timerDisplay'),
+  scoreA: document.getElementById('scoreA'),
+  scoreB: document.getElementById('scoreB'),
+  teamA1: document.getElementById('teamA1'),
+  teamA2: document.getElementById('teamA2'),
+  teamB1: document.getElementById('teamB1'),
+  teamB2: document.getElementById('teamB2'),
+  teamAwrapper: document.getElementById('teamAwrapper'),
+  teamBwrapper: document.getElementById('teamBwrapper'),
+  andTeal: document.getElementById('andTeal'),
+  andPurple: document.getElementById('andPurple'),
+  scoreInputs: document.getElementById('scoreInputs'),
+  scoreTable: document.getElementById('scoreTable'),
+  historyTable: document.getElementById('historyTable'),
+  nowPlaying: document.getElementById('nowPlaying'),
+  waiting: document.getElementById('waiting'),
+  customAlert: document.getElementById('customAlert'),
+  alertMessage: document.getElementById('alertMessage'),
+  customConfirm: document.getElementById('customConfirm'),
+  confirmMessage: document.getElementById('confirmMessage'),
+  confirmAgreeBtn: document.getElementById('confirmAgreeBtn'),
+  confirmCancelBtn: document.getElementById('confirmCancelBtn'),
+  mvpName: document.getElementById('mvpName'),
+  mvpStats: document.getElementById('mvpStats'),
+  mvpWinStats: document.getElementById('mvpWinStats'),
+  mvpWRStats: document.getElementById('mvpWRStats'),
+  quickestTime: document.getElementById('quickestTime'),
+  quickest1: document.getElementById('quickest1'),
+  quickest2: document.getElementById('quickest2'),
+  longestTime: document.getElementById('longestTime'),
+  longest1: document.getElementById('longest1'),
+  longest2: document.getElementById('longest2'),
+  deadlyDuo: document.getElementById('deadlyDuo'),
+  pointMargin: document.getElementById('pointMargin'),
+  matchMargin: document.getElementById('matchMargin'),
+  winMargin: document.getElementById('winMargin')
+};
+
+elements.dateTime.textContent = getDateTime();
 
 // Restore session data if available
 if (localStorage.getItem("players")) {
@@ -25,7 +74,7 @@ if (localStorage.getItem("history")) {
 }
 const savedInput = localStorage.getItem("playerInput");
 if (savedInput) {
-  document.getElementById('playerInput').value = savedInput;
+  elements.playerInput.value = savedInput;
 }
 
 
@@ -42,25 +91,43 @@ function resetSession() {
 
 
 function parsePlayers() {
-    const raw = document.getElementById('playerInput').value;
-    players = raw.split(',').map(p => p.trim()).filter(p => p);
-    players.forEach(p => { 
-      if (!stats[p]) stats[p] = { win: 0, loss: 0, points: 0 };
-    });
-    localStorage.setItem("playerInput", raw); // Save input text
-    localStorage.setItem("players", JSON.stringify(players));
-    localStorage.setItem("stats", JSON.stringify(stats));
+  const raw = elements.playerInput.value;
+  players = raw.split(',').map(p => p.trim()).filter(p => p);
+  players.forEach(p => { 
+    if (!stats[p]) stats[p] = { win: 0, loss: 0, points: 0 };
+  });
+  localStorage.setItem("playerInput", raw);
+  saveToLocalStorage();
 }
 
 
 
-// fill dropdown with player names
+// Consolidated localStorage save function
+function saveToLocalStorage() {
+  localStorage.setItem("players", JSON.stringify(players));
+  localStorage.setItem("stats", JSON.stringify(stats));
+  localStorage.setItem("history", JSON.stringify(history));
+}
+
+
+
+// fill dropdown with player names - optimized with DocumentFragment
 function fillAll() {
-  const sortedPlayers = [...players].sort(); // Sort alphabetically
+  const sortedPlayers = [...players].sort();
+  
   ['teamA1', 'teamA2', 'teamB1', 'teamB2'].forEach(id => {
-    const sel = document.getElementById(id);
+    const sel = elements[id];
+    const fragment = document.createDocumentFragment();
+    
     sel.innerHTML = '';
-    sortedPlayers.forEach(p => sel.add(new Option(p, p)));
+    sortedPlayers.forEach(p => {
+      const option = document.createElement('option');
+      option.value = p;
+      option.textContent = p;
+      fragment.appendChild(option);
+    });
+    
+    sel.appendChild(fragment);
     sel.disabled = false;
   });
 }
@@ -68,75 +135,84 @@ function fillAll() {
 
 
 function randomizeTeams() {
-    let pool = [...players];
-    const pick = () => pool.splice(Math.floor(Math.random() * pool.length), 1)[0]; // after every pick(), the array gets spliced
-    const [a1, a2, b1, b2] = [pick(), pick(), pick(), pick()];
-    // console.log(pool);
-    // then, set the dropdown values
-    teamA1.value = a1; teamA2.value = a2;
-    teamB1.value = b1; teamB2.value = b2;
+  let pool = [...players];
+  const pick = () => pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+  const [a1, a2, b1, b2] = [pick(), pick(), pick(), pick()];
+  
+  elements.teamA1.value = a1;
+  elements.teamA2.value = a2;
+  elements.teamB1.value = b1;
+  elements.teamB2.value = b2;
 }
 
 
 
 function updateScoreboard() {
-  const tbody = document.getElementById('scoreTable');
-  tbody.innerHTML = '';
+  const tbody = elements.scoreTable;
+  const fragment = document.createDocumentFragment();
 
   const sortedPlayers = [...players].sort((a, b) => {
     const statA = stats[a];
     const statB = stats[b];
 
     if (statB.win !== statA.win) {
-      return statB.win - statA.win; // More wins first
+      return statB.win - statA.win;
     }
 
     if (statA.loss !== statB.loss) {
-      return statA.loss - statB.loss; // Fewer losses next
+      return statA.loss - statB.loss;
     }
 
-    return a.localeCompare(b); // alphabetical order
+    return a.localeCompare(b);
   });
 
   sortedPlayers.forEach(p => {
     const s = stats[p];
     const total = s.win + s.loss;
     const wr = total ? ((s.win / total) * 100).toFixed(1) : '0.0';
-    tbody.innerHTML += `
-      <tr>
-        <td class="border border-gray-700 py-2">${p}</td>
-        <td class="border border-gray-700 py-2">${s.win}</td>
-        <td class="border border-gray-700 py-2">${s.loss}</td>
-        <td class="border border-gray-700 py-2">${total}</td>
-        <td class="border border-gray-700 py-2">${wr} %</td>
-      </tr>
+    
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="border border-gray-700 py-2">${p}</td>
+      <td class="border border-gray-700 py-2">${s.win}</td>
+      <td class="border border-gray-700 py-2">${s.loss}</td>
+      <td class="border border-gray-700 py-2">${total}</td>
+      <td class="border border-gray-700 py-2">${wr} %</td>
     `;
+    fragment.appendChild(tr);
   });
+
+  tbody.innerHTML = '';
+  tbody.appendChild(fragment);
 }
 
 
 
 function updateHistory() {
-  const tbody = document.getElementById('historyTable');
-  tbody.innerHTML = '';
+  const tbody = elements.historyTable;
+  const fragment = document.createDocumentFragment();
 
   history.forEach((m, idx) => {
-    tbody.innerHTML += `
-      <tr data-index="${idx}">
-        <td class="border border-gray-700 py-1 text-center">${m.duration}</td>
-        <td class="border border-gray-700 py-1 text-center">${m.teamA.join(' & ')}</td>
-        <td class="border border-gray-700 py-1 text-center">${m.teamB.join(' & ')}</td>
-        <td class="border border-gray-700 py-1 text-center">${m.scoreA} - ${m.scoreB}</td>
-        <td class="border border-gray-700 py-1 text-center relative">
-          <button onclick="toggleDropdown(${idx})" class="px-2">⋮</button>
-          <div id="dropdown-${idx}" class="hidden absolute right-0 mt-1 w-24 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
-            <button onclick="enterEditMode(${idx})" class="block w-full text-left px-2 py-1 hover:bg-gray-700">Edit</button>
-            <button onclick="deleteRow(${idx})" class="block w-full text-left px-2 py-1 hover:bg-gray-700 text-red-400">Delete</button>
-          </div>
-        </td>
-      </tr>
+    const tr = document.createElement('tr');
+    tr.dataset.index = idx;
+    tr.innerHTML = `
+      <td class="border border-gray-700 py-1 text-center">${m.duration}</td>
+      <td class="border border-gray-700 py-1 text-center">${m.teamA.join(' & ')}</td>
+      <td class="border border-gray-700 py-1 text-center">${m.teamB.join(' & ')}</td>
+      <td class="border border-gray-700 py-1 text-center">${m.scoreA} - ${m.scoreB}</td>
+      <td class="border border-gray-700 py-1 text-center relative">
+        <button onclick="toggleDropdown(${idx})" class="px-2">⋮</button>
+        <div id="dropdown-${idx}" class="hidden absolute right-0 mt-1 w-24 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
+          <button onclick="enterEditMode(${idx})" class="block w-full text-left px-2 py-1 hover:bg-gray-700">Edit</button>
+          <button onclick="deleteRow(${idx})" class="block w-full text-left px-2 py-1 hover:bg-gray-700 text-red-400">Delete</button>
+        </div>
+      </td>
     `;
+    fragment.appendChild(tr);
   });
+
+  tbody.innerHTML = '';
+  tbody.appendChild(fragment);
 }
 
 
@@ -201,10 +277,8 @@ function saveEdit(index) {
   const winner = scoreA > scoreB ? 'TeamA' : 'TeamB';
   history[index] = { teamA, teamB, duration, scoreA, scoreB, winner };
 
-  recalcStats(); // rebuild stats from edited history
-  localStorage.setItem("history", JSON.stringify(history));
-  localStorage.setItem("stats", JSON.stringify(stats));
-  localStorage.setItem("players", JSON.stringify(players));
+  recalcStats();
+  saveToLocalStorage();
 
   updateScoreboard();
   updateHistory();
@@ -240,9 +314,8 @@ function deleteRow(index) {
         });
       });
 
-      localStorage.setItem("history", JSON.stringify(history));
-      localStorage.setItem("stats", JSON.stringify(stats));
-      recalcStats()
+      saveToLocalStorage();
+      recalcStats();
       updateScoreboard();
       updateHistory();
       revealHighlights();
@@ -300,7 +373,7 @@ function resetHopAnimation() {
 function animateHop() {
   resetHopAnimation();
 
-  const el = document.getElementById("nowPlaying");
+  const el = elements.nowPlaying;
   const text = el.textContent;
   el.textContent = "";
 
@@ -330,30 +403,88 @@ function resetDotsAnimation() {
 function animateDots() {
   resetDotsAnimation();
 
-  const el = document.getElementById("waiting");
+  const el = elements.waiting;
   const baseText = el.textContent.replace(/\.*$/, "");
   let dotCount = 0;
 
   dotsInterval = setInterval(() => {
     dotCount = (dotCount + 1) % 4;
     el.textContent = baseText + ".".repeat(dotCount);
-  }, 1000); // __ ms interval
+  }, 1000);
 }
 
 
 
-newMatchBtn.onclick = () => {
-  if (!((document.getElementById('playerInput').value).trim() === '')) {
+// Consolidated function to toggle match styles
+function toggleMatchStyles(isActive) {
+  const teamIds = ['teamA1', 'teamA2', 'teamB1', 'teamB2'];
+  
+  if (isActive) {
+    // Active match styles
+    teamIds.forEach(id => {
+      elements[id].disabled = true;
+      elements[id].classList.remove('bg-gray-700', 'text-white', 'biomeFont');
+      elements[id].classList.add('bg-gray-800', 'noShow', 'text-xl', 'biomeFont-bold');
+    });
+    
+    ['teamA1', 'teamA2'].forEach(id => elements[id].classList.add('text-teal-300'));
+    ['teamB1', 'teamB2'].forEach(id => elements[id].classList.add('text-purple-300'));
+    
+    elements.andTeal.classList.add('text-teal-400');
+    elements.andPurple.classList.add('text-purple-300');
+    elements.teamAwrapper.classList.remove('border-gray-500');
+    elements.teamAwrapper.classList.add('border-teal-500');
+    elements.teamBwrapper.classList.remove('border-gray-500');
+    elements.teamBwrapper.classList.add('border-purple-400');
+    
+    elements.newMatchBtn.classList.add('hidden');
+    elements.confirmMatchBtn.classList.add('hidden');
+    elements.currentMatch.classList.remove('hidden');
+    elements.playerSelect.classList.add('hidden');
+    elements.scoreA.classList.remove('hidden');
+    elements.scoreB.classList.remove('hidden');
+    elements.scoreInputs.classList.remove('hidden');
+  } else {
+    // Reset styles
+    resetHopAnimation();
+    resetDotsAnimation();
+    
+    teamIds.forEach(id => {
+      elements[id].classList.remove('noShow', 'bg-gray-800', 'text-xl', 'biomeFont-bold', 'text-teal-300', 'text-purple-300');
+      elements[id].classList.add('bg-gray-700', 'text-white', 'biomeFont');
+    });
+    
+    elements.andTeal.classList.remove('text-teal-400');
+    elements.andPurple.classList.remove('text-purple-300');
+    elements.teamAwrapper.classList.remove('border-teal-500');
+    elements.teamAwrapper.classList.add('border-gray-500');
+    elements.teamBwrapper.classList.remove('border-purple-400');
+    elements.teamBwrapper.classList.add('border-gray-500');
+    
+    elements.newMatchBtn.classList.remove('hidden');
+    elements.matchSetup.classList.add('hidden');
+    elements.scoreA.classList.add('hidden');
+    elements.scoreB.classList.add('hidden');
+    elements.scoreInputs.classList.add('hidden');
+    elements.scoreA.value = '';
+    elements.scoreB.value = '';
+  }
+}
+
+
+
+elements.newMatchBtn.onclick = () => {
+  if (!((elements.playerInput.value).trim() === '')) {
     parsePlayers();
     if (players.length > 3) {
       fillAll(); 
       randomizeTeams(); 
       resetTimer();
       animateDots();
-      document.getElementById('matchSetup').classList.remove('hidden');
-      document.getElementById('confirmMatchBtn').classList.remove('hidden');
-      document.getElementById('currentMatch').classList.add('hidden');
-      document.getElementById('playerSelect').classList.remove('hidden');
+      elements.matchSetup.classList.remove('hidden');
+      elements.confirmMatchBtn.classList.remove('hidden');
+      elements.currentMatch.classList.add('hidden');
+      elements.playerSelect.classList.remove('hidden');
     } else {
       showCustomAlert("This is a 2 vs 2... 😐\nMinimum 4 required");
     }
@@ -364,48 +495,23 @@ newMatchBtn.onclick = () => {
 
 
 
-confirmMatchBtn.onclick = () => {
-    ['teamA1','teamA2','teamB1','teamB2'].forEach(id => document.getElementById(id).disabled = true);
-
-    // changeStyle
-    ['teamA1','teamA2','teamB1','teamB2'].forEach(id => document.getElementById(id).classList.remove('bg-gray-700', 'text-white', 'biomeFont'));
-    ['teamA1','teamA2','teamB1','teamB2'].forEach(id => document.getElementById(id).classList.add('bg-gray-800', 'noShow', 'text-xl', 'biomeFont-bold'));
-    ['teamA1','teamA2'].forEach(id => document.getElementById(id).classList.add('text-teal-300'));
-    document.getElementById('andTeal').classList.add('text-teal-400');
-    ['teamB1','teamB2'].forEach(id => document.getElementById(id).classList.add('text-purple-300'));
-    document.getElementById('andPurple').classList.add('text-purple-300');
-
-    document.getElementById('newMatchBtn').classList.add('hidden');
-    document.getElementById('confirmMatchBtn').classList.add('hidden');
-    document.getElementById('currentMatch').classList.remove('hidden');
-    document.getElementById('playerSelect').classList.add('hidden');
-
-    document.getElementById('scoreA').classList.remove('hidden');
-    document.getElementById('scoreB').classList.remove('hidden');
-    document.getElementById('scoreInputs').classList.remove('hidden');
-
-    startTimer();
-
-    // change border colors
-    document.getElementById('teamAwrapper').classList.remove('border-gray-500');
-    document.getElementById('teamBwrapper').classList.remove('border-gray-500');
-    document.getElementById('teamAwrapper').classList.add('border-teal-500');
-    document.getElementById('teamBwrapper').classList.add('border-purple-400');
-
-    animateHop(); // Start the animation loop
+elements.confirmMatchBtn.onclick = () => {
+  toggleMatchStyles(true);
+  startTimer();
+  animateHop();
 };
 
 
 
 function startTimer() {
   startTimestamp = Date.now();
-  document.getElementById('timerDisplay').classList.remove('hidden');
+  elements.timerDisplay.classList.remove('hidden');
 
   timerInterval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - startTimestamp) / 1000);
     const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
     const s = String(elapsed % 60).padStart(2, '0');
-    document.getElementById('timerDisplay').textContent = `${m}:${s}`;
+    elements.timerDisplay.textContent = `${m}:${s}`;
   }, 1000);
 }
 
@@ -420,49 +526,47 @@ function stopTimer() {
 
 
 function resetTimer() {
+  stopTimer();
+  seconds = 0;
+  elements.timerDisplay.textContent = '00:00';
+  elements.timerDisplay.classList.add('hidden');
+}
+
+
+
+elements.submitScoreBtn.onclick = () => {
+  const scoreA = parseInt(elements.scoreA.value, 10);
+  const scoreB = parseInt(elements.scoreB.value, 10);
+
+  if (isNaN(scoreA) || isNaN(scoreB)) {
+    showCustomAlert("Please input scores... 😐");
+  } else {
+    toggleMatchStyles(false);
     stopTimer();
-    seconds = 0;
-    document.getElementById('timerDisplay').textContent = '00:00';
-    document.getElementById('timerDisplay').classList.add('hidden');
-}
+    
+    const teamA = [elements.teamA1.value, elements.teamA2.value];
+    const teamB = [elements.teamB1.value, elements.teamB2.value];
+    const duration = elements.timerDisplay.textContent;
+    const winner = scoreA > scoreB ? 'TeamA' : 'TeamB';
 
+    teamA.forEach(p => {
+      stats[p][winner === 'TeamA' ? 'win' : 'loss']++;
+      stats[p].points += scoreA;
+    });
+    teamB.forEach(p => {
+      stats[p][winner === 'TeamB' ? 'win' : 'loss']++;
+      stats[p].points += scoreB;
+    });
 
-
-submitScoreBtn.onclick = () => {
-  const scoreA = parseInt(document.getElementById('scoreA').value, 10);
-    const scoreB = parseInt(document.getElementById('scoreB').value, 10);
-
-    if (isNaN(scoreA) || isNaN(scoreB)) 
-      {
-        showCustomAlert("Please input scores... 😐");
-      } 
-    else 
-      {
-        resetStyle();
-        stopTimer();
-        const teamA = [teamA1.value, teamA2.value];
-        const teamB = [teamB1.value, teamB2.value];
-        const duration = document.getElementById('timerDisplay').textContent;
-        const winner = scoreA > scoreB ? 'TeamA' : 'TeamB';
-
-        teamA.forEach(p => {
-            stats[p][winner === 'TeamA' ? 'win' : 'loss']++;
-            stats[p].points += scoreA;
-        });
-        teamB.forEach(p => {
-            stats[p][winner === 'TeamB' ? 'win' : 'loss']++;
-            stats[p].points += scoreB;
-        });    
-
-        history.push({ teamA, teamB, winner, duration, scoreA, scoreB });
-        localStorage.setItem("stats", JSON.stringify(stats));
-        localStorage.setItem("history", JSON.stringify(history));
-        updateScoreboard(); 
-        updateHistory();
-        resetTimer();
-        revealHighlights();
-      }
-}
+    history.push({ teamA, teamB, winner, duration, scoreA, scoreB });
+    saveToLocalStorage();
+    
+    updateScoreboard();
+    updateHistory();
+    resetTimer();
+    revealHighlights();
+  }
+};
 
 
 
@@ -471,60 +575,36 @@ function revealHighlights() {
   if (history.length > 3) {
     document.querySelectorAll('.notEnough').forEach(el => {
       el.classList.add('hidden');
-    })
+    });
 
-    document.getElementById('mvpStats').classList.remove('hidden');
-    document.getElementById('mvpName').textContent = getMVP()[0];
-    document.getElementById('mvpWinStats').textContent = getMVP()[1] + " wins";
-    document.getElementById('mvpWRStats').textContent = getMVP()[2];
+    const mvpData = getMVP();
+    elements.mvpStats.classList.remove('hidden');
+    elements.mvpName.textContent = mvpData[0];
+    elements.mvpWinStats.textContent = mvpData[1] + " wins";
+    elements.mvpWRStats.textContent = mvpData[2];
 
-    document.getElementById('quickestTime').textContent = getQuickestMatch()[0];
-    document.getElementById('quickest1').textContent = getQuickestMatch()[1];
-    document.getElementById('quickest2').textContent = getQuickestMatch()[2];
+    const quickest = getQuickestMatch();
+    elements.quickestTime.textContent = quickest[0];
+    elements.quickest1.textContent = quickest[1];
+    elements.quickest2.textContent = quickest[2];
 
-    document.getElementById('longestTime').textContent = getLongestMatch()[0];
-    document.getElementById('longest1').textContent = getLongestMatch()[1];
-    document.getElementById('longest2').textContent = getLongestMatch()[2];
+    const longest = getLongestMatch();
+    elements.longestTime.textContent = longest[0];
+    elements.longest1.textContent = longest[1];
+    elements.longest2.textContent = longest[2];
 
-    document.getElementById('winMargin').classList.remove('hidden');
-    document.getElementById('deadlyDuo').textContent = getBiggestPointLead()[0];
-    document.getElementById('pointMargin').textContent = getBiggestPointLead()[1] + " points";
-    document.getElementById('matchMargin').textContent = getBiggestPointLead()[2];
+    const biggestLead = getBiggestPointLead();
+    elements.winMargin.classList.remove('hidden');
+    elements.deadlyDuo.textContent = biggestLead[0];
+    elements.pointMargin.textContent = biggestLead[1] + " points";
+    elements.matchMargin.textContent = biggestLead[2];
   }
 }
 
 
 
-function resetStyle() {
-  // reset values
-  document.getElementById('scoreA').value = '';
-  document.getElementById('scoreB').value = '';
-  
-  document.getElementById('newMatchBtn').classList.remove('hidden');
-  document.getElementById('matchSetup').classList.add('hidden');
-
-  // reset selection
-  ['teamA1','teamA2','teamB1','teamB2'].forEach(id => document.getElementById(id).classList.remove('noShow', 'bg-gray-800', 'noShow', 'text-xl', 'biomeFont-bold', 'text-teal-300', 'text-purple-300'));
-  ['teamA1','teamA2','teamB1','teamB2'].forEach(id => document.getElementById(id).classList.add('bg-gray-700', 'text-white', 'biomeFont'));
-  document.getElementById('andTeal').classList.remove('text-teal-400');
-  document.getElementById('andPurple').classList.remove('text-purple-300');
-
-  // change border colors
-  document.getElementById('teamAwrapper').classList.remove('border-teal-500');
-  document.getElementById('teamBwrapper').classList.remove('border-purple-400');
-  document.getElementById('teamAwrapper').classList.add('border-gray-500');
-  document.getElementById('teamBwrapper').classList.add('border-gray-500');
-
-  // hidden again
-  document.getElementById('scoreA').classList.add('hidden');
-  document.getElementById('scoreB').classList.add('hidden');
-  document.getElementById('scoreInputs').classList.add('hidden');
-}
-
-
-
 function getMVP() {
-  if (history.length < 4) return "No MVP yet (less than 4 matches played).";
+  if (history.length < 4) return ["No MVP yet", 0, "0.0"];
 
   let maxWins = 0;
   let topPlayers = [];
@@ -622,14 +702,14 @@ function getDateTime() {
 
 
 function showCustomAlert(message) {
-  document.getElementById('alertMessage').innerHTML = message.replace(/\n/g, '<br>');
-  document.getElementById('customAlert').classList.remove('hidden');
+  elements.alertMessage.innerHTML = message.replace(/\n/g, '<br>');
+  elements.customAlert.classList.remove('hidden');
 }
 
 
 
 function hideCustomAlert() {
-  document.getElementById('customAlert').classList.add('hidden');
+  elements.customAlert.classList.add('hidden');
 }
 
 
@@ -658,29 +738,27 @@ function getSessionData() {
     showCustomAlert("Failed to copy data");
     console.error("Clipboard error:", err);
   });
-
 }
 
 
 
 function showCustomConfirm(message, callback) {
-  document.getElementById('confirmMessage').innerHTML = message.replace(/\n/g, '<br>');
-  document.getElementById('customConfirm').classList.remove('hidden');
+  elements.confirmMessage.innerHTML = message.replace(/\n/g, '<br>');
+  elements.customConfirm.classList.remove('hidden');
 
   // Temporary one-time event handlers
-  const agreeBtn = document.getElementById('confirmAgreeBtn');
-  const cancelBtn = document.getElementById('confirmCancelBtn');
-
   const cleanup = () => {
-    document.getElementById('customConfirm').classList.add('hidden');
-    agreeBtn.onclick = null;
-    cancelBtn.onclick = null;
+    elements.customConfirm.classList.add('hidden');
+    elements.confirmAgreeBtn.onclick = null;
+    elements.confirmCancelBtn.onclick = null;
   };
-  agreeBtn.onclick = () => {
+  
+  elements.confirmAgreeBtn.onclick = () => {
     cleanup();
     callback(true);
   };
-  cancelBtn.onclick = () => {
+  
+  elements.confirmCancelBtn.onclick = () => {
     cleanup();
     callback(false);
   };
@@ -689,9 +767,11 @@ function showCustomConfirm(message, callback) {
 
 
 function getQuickestMatch() {
-  if (history.length === 0) return ["No matches yet"];
+  if (history.length === 0) return ["No matches yet", "", ""];
+  
   let quickest = history[0];
   let minSeconds = durationToSeconds(quickest.duration);
+  
   for (const match of history) {
     const secs = durationToSeconds(match.duration);
     if (secs < minSeconds) {
@@ -699,15 +779,18 @@ function getQuickestMatch() {
       quickest = match;
     }
   }
+  
   return [formatSeconds(minSeconds), quickest.teamA.join(' & '), quickest.teamB.join(' & ')];
 }
 
 
 
 function getLongestMatch() {
-  if (history.length === 0) return ["No matches yet"];
+  if (history.length === 0) return ["No matches yet", "", ""];
+  
   let longest = history[0];
   let maxSeconds = durationToSeconds(longest.duration);
+  
   for (const match of history) {
     const secs = durationToSeconds(match.duration);
     if (secs > maxSeconds) {
@@ -715,6 +798,7 @@ function getLongestMatch() {
       longest = match;
     }
   }
+  
   return [formatSeconds(maxSeconds), longest.teamA.join(' & '), longest.teamB.join(' & ')];
 }
 
@@ -738,25 +822,26 @@ function formatSeconds(totalSeconds) {
 
 
 function getBiggestPointLead() {
-  if (history.length === 0) return ["No matches yet"];
+  if (history.length === 0) return ["No matches yet", "0", "0"];
+  
   let maxDiff = -1;
   let leadMatch = null;
   let matchIndex = -1;
   let shortestTime = Infinity;
+  
   for (let i = 0; i < history.length; i++) {
     const match = history[i];
     const diff = Math.abs(match.scoreA - match.scoreB);
     const matchTime = durationToSeconds(match.duration);
-    if (
-      diff > maxDiff ||
-      (diff === maxDiff && matchTime < shortestTime)
-    ) {
+    
+    if (diff > maxDiff || (diff === maxDiff && matchTime < shortestTime)) {
       maxDiff = diff;
       leadMatch = match;
       matchIndex = i + 1;
       shortestTime = matchTime;
     }
   }
+  
   const winningTeam = leadMatch.winner === 'TeamA' ? leadMatch.teamA : leadMatch.teamB;
   return [winningTeam.join(' & '), maxDiff.toString(), matchIndex.toString()];
 }

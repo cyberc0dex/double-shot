@@ -27,6 +27,13 @@
 
 .screenToWidth {
     width: 34vw;
+    text-align: center;
+    text-align-last: center;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .limitFrame {
