@@ -1,5 +1,6 @@
 node_modules/
 package-lock.json
+package.json
 img/icons.svg
 img/favicon.png
 tools/

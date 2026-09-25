@@ -325,9 +325,11 @@ export async function renderReport({ standings, history, highlights, startedAt }
         maxWidth: nameWidth
       });
 
-      text(ctx, `${match.scoreA} - ${match.scoreB}`, midX, rowY, {
-        font: NUM(700, 20), color: C.text, align: 'center'
-      });
+      // Anchor on the dash so it sits on midX whatever the digit counts.
+      const scoreFont = NUM(700, 20);
+      text(ctx, '-', midX, rowY, { font: scoreFont, color: C.text, align: 'center' });
+      text(ctx, String(match.scoreA), midX - 12, rowY, { font: scoreFont, color: C.text, align: 'right' });
+      text(ctx, String(match.scoreB), midX + 12, rowY, { font: scoreFont, color: C.text, align: 'left' });
 
       text(ctx, match.teamB.join(' & '), W - PAD, rowY, {
         font: UI(aWon ? 400 : 700, 18),

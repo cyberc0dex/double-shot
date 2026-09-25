@@ -200,12 +200,15 @@ export function renderHistory(tbody, history, handlers) {
     teamB.textContent = match.teamB.join(' & ');
     tr.appendChild(teamB);
 
+    // Grid wrapper keeps the dash on the column centre whatever the digit counts.
     const score = el('td', 'score-cell');
-    score.append(
+    const scoreLine = el('span', 'score-line');
+    scoreLine.append(
       el('span', aWon ? 'win' : 'lose', String(match.scoreA)),
       el('span', 'sep', '-'),
       el('span', aWon ? 'lose' : 'win', String(match.scoreB))
     );
+    score.appendChild(scoreLine);
     tr.appendChild(score);
 
     tr.appendChild(rowMenu(match, handlers));
