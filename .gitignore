@@ -1,3 +1,8 @@
 node_modules/
 package-lock.json
-input.css
+img/icons.svg
+img/favicon.png
+tools/
+session.md
+suggestion.md
+task.md
